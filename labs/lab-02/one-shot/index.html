@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Problem Tracker (one-shot)</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 560px; margin: 32px auto; padding: 0 16px; }
+  form { display: grid; gap: 8px; margin-bottom: 16px; }
+  input, select, button { padding: 10px; font-size: 16px; }
+  .row { display: flex; gap: 8px; }
+  .row input { flex: 1; }
+  .filters { display: flex; gap: 6px; margin-bottom: 12px; }
+  .filters button.active { background: #222; color: #fff; }
+  ul { list-style: none; padding: 0; }
+  li { border: 1px solid #ddd; border-radius: 8px; padding: 10px; margin-bottom: 8px; display: grid; gap: 6px; }
+  .top { display: flex; justify-content: space-between; gap: 8px; }
+  .tag { font-size: 12px; padding: 2px 8px; border-radius: 99px; background: #eee; }
+  .high { background: #f8d0d0; } .medium { background: #fbe8b5; } .low { background: #d5ecd5; }
+  li.solved .title { text-decoration: line-through; color: #888; }
+  .actions { display: flex; gap: 6px; }
+  .empty { color: #888; }
+</style>
+</head>
+<body>
+<h1>Problem Tracker</h1>
+<form id="form">
+  <div class="row">
+    <input id="title" placeholder="Describe the problem" aria-label="Problem" required>
+    <select id="priority" aria-label="Priority">
+      <option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option>
+    </select>
+  </div>
+  <button type="submit">Add problem</button>
+</form>
+<div class="filters" id="filters"></div>
+<ul id="list"></ul>
+
+<script>
+  const STATUSES = ["open", "in progress", "solved"];
+  let items = [], filter = "all";
+  try { items = JSON.parse(localStorage.getItem("problems")) || []; } catch (e) {}
+  const save = () => { try { localStorage.setItem("problems", JSON.stringify(items)); } catch (e) {} };
+
+  function render() {
+    const f = document.getElementById("filters");
+    f.innerHTML = "";
+    ["all", ...STATUSES].forEach(s => {
+      const b = document.createElement("button");
+      b.textContent = s; if (s === filter) b.className = "active";
+      b.onclick = () => { filter = s; render(); };
+      f.appendChild(b);
+    });
+    const list = document.getElementById("list");
+    list.innerHTML = "";
+    const shown = items.filter(p => filter === "all" || p.status === filter);
+    if (!shown.length) { list.innerHTML = '<li class="empty">No problems here.</li>'; return; }
+    shown.forEach(p => {
+      const li = document.createElement("li");
+      li.className = p.status === "solved" ? "solved" : "";
+      const top = document.createElement("div"); top.className = "top";
+      const t = document.createElement("span"); t.className = "title"; t.textContent = p.title;
+      const tag = document.createElement("span"); tag.className = "tag " + p.priority; tag.textContent = p.priority;
+      top.append(t, tag);
+      const actions = document.createElement("div"); actions.className = "actions";
+      const sel = document.createElement("select");
+      STATUSES.forEach(s => { const o = document.createElement("option"); o.value = s; o.textContent = s; o.selected = s === p.status; sel.appendChild(o); });
+      sel.onchange = () => { p.status = sel.value; save(); render(); };
+      const del = document.createElement("button"); del.textContent = "Delete";
+      del.onclick = () => { items = items.filter(x => x !== p); save(); render(); };
+      actions.append(sel, del);
+      li.append(top, actions);
+      list.appendChild(li);
+    });
+  }
+
+  document.getElementById("form").onsubmit = e => {
+    e.preventDefault();
+    const title = document.getElementById("title");
+    if (!title.value.trim()) return;
+    items.unshift({ title: title.value.trim(), priority: document.getElementById("priority").value, status: "open" });
+    title.value = ""; save(); render();
+  };
+  render();
+</script>
+</body>
+</html>
