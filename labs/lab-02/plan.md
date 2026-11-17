@@ -1,8 +1,6 @@
-# Plan: add a "due date" to the problem tracker
+ Plan: add a "due date" to the problem tracker
 
-DRAFT. Replace this with the plan your own agent produced in plan mode if the lab asks for that.
-
-## Goal
+##Goal
 Let each problem have an optional due date, and show overdue problems in red.
 
 ## Steps
